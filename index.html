@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AI Table Counter</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6fb;
+text-align:center;
+padding:30px;
+}
+
+.container{
+background:white;
+padding:20px;
+border-radius:15px;
+max-width:600px;
+margin:auto;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+button{
+background:#4a6cf7;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+font-size:16px;
+}
+
+button:hover{
+background:#3249c7;
+}
+
+canvas{
+max-width:100%;
+border-radius:10px;
+margin-top:15px;
+}
+
+.result{
+font-size:24px;
+margin-top:20px;
+font-weight:bold;
+color:#333;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>AI Table Counter</h2>
+
+<input type="file" id="fileInput" accept="image/*">
+
+<br><br>
+
+<button onclick="analyze()">Analyze Photo</button>
+
+<br><br>
+
+<canvas id="canvas"></canvas>
+
+<div class="result" id="count"></div>
+
+</div>
+
+<script>
+
+let imageBase64=""
+let img=new Image()
+
+document.getElementById("fileInput").addEventListener("change",function(e){
+
+let reader=new FileReader()
+
+reader.onload=function(){
+
+imageBase64=reader.result.split(",")[1]
+
+img.onload=function(){
+
+let canvas=document.getElementById("canvas")
+let ctx=canvas.getContext("2d")
+
+canvas.width=img.width
+canvas.height=img.height
+
+ctx.drawImage(img,0,0)
+
+}
+
+img.src=reader.result
+
+}
+
+reader.readAsDataURL(e.target.files[0])
+
+})
+
+async function analyze(){
+
+let response=await fetch("https://serverless.roboflow.com/chaymas-workspace/workflows/detect-count-and-visualize",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+api_key:"XnEPAghFKADxjHz15SJS",
+
+inputs:{
+image:{
+type:"base64",
+value:imageBase64
+}
+}
+
+})
+
+})
+
+let data=await response.json()
+
+let predictions=data.outputs[0].predictions
+
+let canvas=document.getElementById("canvas")
+let ctx=canvas.getContext("2d")
+
+ctx.drawImage(img,0,0)
+
+ctx.lineWidth=4
+ctx.strokeStyle="lime"
+
+predictions.forEach(p=>{
+
+let x=p.x-p.width/2
+let y=p.y-p.height/2
+
+ctx.strokeRect(x,y,p.width,p.height)
+
+})
+
+document.getElementById("count").innerText=
+"Tables detected: "+predictions.length
+
+}
+
+</script>
+
+</body>
+</html>
