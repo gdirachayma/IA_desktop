@@ -59,7 +59,7 @@ top:0;
 <button onclick="analyser()">Analyze Photo</button>
 
 <div id="count"></div>
-  <div id="error" style="color:red;font-size:18px;"></div>
+<div id="error" style="color:red;font-size:18px;"></div>
 
 <div class="imageBox">
 <img id="output">
@@ -145,7 +145,12 @@ ctx.strokeRect(x,y,p.width,p.height);
 
 }catch(error){
 
-console.error(error);
+catch(error){
+
+document.getElementById("error").innerText =
+"Error: " + error;
+
+};
 alert("Error: check API key or workflow");
 
 }
@@ -161,5 +166,6 @@ reader.readAsDataURL(file);
 </body>
 
 </html>
+
 
 
