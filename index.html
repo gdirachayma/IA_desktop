@@ -1,105 +1,35 @@
-<script>
+let predictions = [];
 
-async function analyser(){
+if(data.outputs){
 
-let file=document.getElementById("imageInput").files[0]
-
-if(!file){
-alert("choose image first")
-return
+if(Array.isArray(data.outputs)){
+predictions = data.outputs[0].predictions || []
 }
 
-let reader=new FileReader()
-
-reader.onloadend=async function(){
-
-let base64=reader.result.split(",")[1]
-
-let response=await fetch(
-"https://serverless.roboflow.com/chaymas-workspace/workflows/detect-count-and-visualize",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-api_key:"XnEPAghFKADxjHz15SJS",
-inputs:{
-image:{
-type:"base64",
-value:base64
+else if(data.outputs.predictions){
+predictions = data.outputs.predictions
 }
-}
-})
-})
-
-let data=await response.json()
-
-console.log(data)
-
-/* استخراج العدد */
-
-let count=0
-
-if(data.outputs && data.outputs.count_objects){
-
-count=Object.values(data.outputs.count_objects)[0]
 
 }
 
-/* استخراج الصناديق */
+/* تأكد أنها مصفوفة */
 
-let predictions=[]
-
-if(data.outputs && data.outputs.predictions){
-
-predictions=data.outputs.predictions
-
+if(!Array.isArray(predictions)){
+predictions = []
 }
 
 /* عرض العدد */
 
-document.getElementById("count").innerText=
-"Number of tables: "+count
+document.getElementById("count").innerText =
+"Number of tables: " + predictions.length;
 
-/* عرض الصورة */
+/* رسم الصناديق */
 
-let img=document.getElementById("output")
-img.src=reader.result
+predictions.forEach(p => {
 
-img.onload=function(){
+let x = p.x - p.width/2;
+let y = p.y - p.height/2;
 
-let canvas=document.getElementById("canvas")
-canvas.width=img.width
-canvas.height=img.height
+ctx.strokeRect(x, y, p.width, p.height);
 
-let ctx=canvas.getContext("2d")
-
-ctx.clearRect(0,0,canvas.width,canvas.height)
-
-ctx.strokeStyle="red"
-ctx.lineWidth=3
-
-if(Array.isArray(predictions)){
-
-predictions.forEach(p=>{
-
-let x=p.x-p.width/2
-let y=p.y-p.height/2
-
-ctx.strokeRect(x,y,p.width,p.height)
-
-})
-
-}
-
-}
-
-}
-
-reader.readAsDataURL(file)
-
-}
-
-</script>
-
+});
