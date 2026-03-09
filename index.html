@@ -1,96 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Roboflow Detection</title>
+</head>
+
+<body>
+
+<h2>Détection IA</h2>
+
+<h3>Importer une image</h3>
+<input type="file" id="fileInput">
+<br><br>
+
+<h3>Ou prendre une photo</h3>
+<video id="video" width="300" autoplay></video>
+<br>
+<button onclick="takePhoto()">Prendre Photo</button>
+
+<br><br>
+
+<button onclick="sendImage()">Detect</button>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<pre id="result"></pre>
+
 <script>
 
-async function analyser(){
+let imageBase64 = ""
 
-let file = document.getElementById("imageInput").files[0];
+document.getElementById("fileInput").addEventListener("change", function(e){
 
-if(!file){
-alert("Please choose an image");
-return;
+let reader = new FileReader()
+
+reader.onload = function(){
+imageBase64 = reader.result.split(",")[1]
 }
 
-let reader = new FileReader();
+reader.readAsDataURL(e.target.files[0])
 
-reader.onloadend = async function(){
+})
 
-let base64 = reader.result.split(',')[1];
 
-let response = await fetch(
-"https://serverless.roboflow.com/chaymas-workspace/workflows/detect-count-and-visualize",
-{
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+document.getElementById("video").srcObject = stream
+})
+
+
+function takePhoto(){
+
+let video = document.getElementById("video")
+let canvas = document.getElementById("canvas")
+
+canvas.width = video.videoWidth
+canvas.height = video.videoHeight
+
+let ctx = canvas.getContext("2d")
+
+ctx.drawImage(video,0,0)
+
+imageBase64 = canvas.toDataURL("image/jpeg").split(",")[1]
+
+}
+
+
+async function sendImage(){
+
+let response = await fetch("https://serverless.roboflow.com/chaymas-workspace/workflows/detect-count-and-visualize",{
+
 method:"POST",
+
 headers:{
 "Content-Type":"application/json"
 },
+
 body:JSON.stringify({
+
 api_key:"XnEPAghFKADxjHz15SJS",
+
 inputs:{
 image:{
 type:"base64",
-value:base64
+value:imageBase64
 }
 }
+
 })
-});
 
-let data = await response.json();
+})
 
-console.log("Roboflow response:",data);
+let data = await response.json()
 
-/* استخراج الصناديق */
-let predictions = [];
-
-if(data.outputs){
-data.outputs.forEach(o=>{
-if(Array.isArray(o.predictions)){
-predictions = o.predictions;
-}
-});
-}
-
-/* حساب العدد */
-let count = predictions.length;
-
-document.getElementById("count").innerText =
-"Number of tables: " + count;
-
-/* عرض الصورة */
-let img = document.getElementById("output");
-img.src = reader.result;
-
-img.onload = function(){
-
-let canvas = document.getElementById("canvas");
-canvas.width = img.width;
-canvas.height = img.height;
-
-let ctx = canvas.getContext("2d");
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-ctx.strokeStyle="red";
-ctx.lineWidth=3;
-
-/* رسم الصناديق فقط إذا كانت موجودة */
-if(Array.isArray(predictions)){
-
-predictions.forEach(p=>{
-
-let x = p.x - p.width/2;
-let y = p.y - p.height/2;
-
-ctx.strokeRect(x,y,p.width,p.height);
-
-});
-
-}
-
-}
-
-}
-
-reader.readAsDataURL(file);
+document.getElementById("result").textContent = JSON.stringify(data,null,2)
 
 }
 
 </script>
+
+</body>
+</html>
