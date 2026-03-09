@@ -2,20 +2,20 @@
 
 async function analyser(){
 
-let file=document.getElementById("imageInput").files[0]
+let file = document.getElementById("imageInput").files[0];
 
 if(!file){
-alert("Please choose image")
-return
+alert("Please choose an image");
+return;
 }
 
-let reader=new FileReader()
+let reader = new FileReader();
 
-reader.onloadend=async function(){
+reader.onloadend = async function(){
 
-let base64=reader.result.split(",")[1]
+let base64 = reader.result.split(',')[1];
 
-let response=await fetch(
+let response = await fetch(
 "https://serverless.roboflow.com/chaymas-workspace/workflows/detect-count-and-visualize",
 {
 method:"POST",
@@ -31,75 +31,65 @@ value:base64
 }
 }
 })
-})
+});
 
-let data=await response.json()
+let data = await response.json();
 
-console.log(data)
-
-let predictions=[]
-let count=0
+console.log("Roboflow response:",data);
 
 /* استخراج الصناديق */
+let predictions = [];
+
 if(data.outputs){
-
 data.outputs.forEach(o=>{
-
-if(o.predictions){
-predictions=o.predictions
+if(Array.isArray(o.predictions)){
+predictions = o.predictions;
+}
+});
 }
 
-if(o.count_objects){
-count=Object.values(o.count_objects)[0]
-}
+/* حساب العدد */
+let count = predictions.length;
 
-})
-
-}
-
-/* عرض العدد */
-if(count===0 && Array.isArray(predictions)){
-count=predictions.length
-}
-
-document.getElementById("count").innerText=
-"Number of tables: "+count
+document.getElementById("count").innerText =
+"Number of tables: " + count;
 
 /* عرض الصورة */
-let img=document.getElementById("output")
-img.src=reader.result
+let img = document.getElementById("output");
+img.src = reader.result;
 
-img.onload=function(){
+img.onload = function(){
 
-let canvas=document.getElementById("canvas")
-canvas.width=img.width
-canvas.height=img.height
+let canvas = document.getElementById("canvas");
+canvas.width = img.width;
+canvas.height = img.height;
 
-let ctx=canvas.getContext("2d")
+let ctx = canvas.getContext("2d");
 
-ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-ctx.strokeStyle="red"
-ctx.lineWidth=3
+ctx.strokeStyle="red";
+ctx.lineWidth=3;
 
+/* رسم الصناديق فقط إذا كانت موجودة */
 if(Array.isArray(predictions)){
 
 predictions.forEach(p=>{
 
-let x=p.x-p.width/2
-let y=p.y-p.height/2
+let x = p.x - p.width/2;
+let y = p.y - p.height/2;
 
-ctx.strokeRect(x,y,p.width,p.height)
+ctx.strokeRect(x,y,p.width,p.height);
 
-})
-
-}
+});
 
 }
 
 }
 
-reader.readAsDataURL(file)
+}
+
+reader.readAsDataURL(file);
 
 }
 
