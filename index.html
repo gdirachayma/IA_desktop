@@ -1,87 +1,15 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-<meta charset="UTF-8">
-<title>AI Table Counter</title>
-
-<style>
-
-body{
-font-family:Arial;
-text-align:center;
-background:#f2f4f7;
-}
-
-button{
-padding:12px 20px;
-font-size:16px;
-background:#2b7cff;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-#count{
-font-size:28px;
-margin-top:20px;
-}
-
-.imageBox{
-position:relative;
-display:inline-block;
-margin-top:20px;
-}
-
-#output{
-max-width:90%;
-}
-
-canvas{
-position:absolute;
-left:0;
-top:0;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>AI Table Counter</h1>
-
-<input type="file" accept="image/*" capture="environment" id="imageInput">
-
-<br><br>
-
-<button onclick="analyser()">Analyze Photo</button>
-
-<div id="count"></div>
-<div id="error" style="color:red;font-size:18px;"></div>
-
-<div class="imageBox">
-<img id="output">
-<canvas id="canvas"></canvas>
-</div>
-
-<script>
-
 async function analyser(){
 
 let file = document.getElementById("imageInput").files[0];
 
 if(!file){
-alert("Select an image first");
+alert("Please choose an image");
 return;
 }
 
 let reader = new FileReader();
 
 reader.onloadend = async function(){
-
-try{
 
 let base64 = reader.result.split(',')[1];
 
@@ -107,14 +35,7 @@ let data = await response.json();
 
 console.log(data);
 
-let predictions=[];
-
-if(data.outputs && data.outputs[0].predictions){
-predictions = data.outputs[0].predictions;
-}
-
-document.getElementById("count").innerText =
-"Number of tables: " + predictions.length;
+let predictions = data.outputs[0].predictions || [];
 
 let img = document.getElementById("output");
 img.src = reader.result;
@@ -132,26 +53,28 @@ ctx.clearRect(0,0,canvas.width,canvas.height);
 ctx.strokeStyle="red";
 ctx.lineWidth=3;
 
+if(Array.isArray(predictions)){
+
+document.getElementById("count").innerText =
+"Number of tables: " + predictions.length;
+
 predictions.forEach(p=>{
 
-let x = p.x - p.width/2;
-let y = p.y - p.height/2;
+let x=p.x-p.width/2;
+let y=p.y-p.height/2;
 
 ctx.strokeRect(x,y,p.width,p.height);
 
 });
 
+}else{
+
+let count = Object.values(predictions)[0] || 0;
+
+document.getElementById("count").innerText =
+"Number of tables: "+count;
+
 }
-
-}catch(error){
-
-catch(error){
-
-document.getElementById("error").innerText =
-"Error: " + error;
-
-};
-alert("Error: check API key or workflow");
 
 }
 
@@ -160,12 +83,3 @@ alert("Error: check API key or workflow");
 reader.readAsDataURL(file);
 
 }
-
-</script>
-
-</body>
-
-</html>
-
-
-
